@@ -24,9 +24,9 @@
 
 int P, D, I, previousError, PIDvalue, error;
 int lsp, rsp;
-int Speed = 255;
+int Speed = 150;
 int correction_count;
-int avg_speed = 200;
+int avg_speed = 180;
 bool Lost = false;
 
 float Kp = 0;
@@ -97,7 +97,7 @@ void line_follow(){
   { if ((digitalRead(IR1) == 0) and (digitalRead(IR2) == 0) and (digitalRead(IR4) == 0) and (digitalRead(IR5) == 0)){
     Serial.println("Missed");
     reverse(100);
-    delay(500);
+    delay(300);
     stop();
     correction_count += 1;
     if (correction_count >= 5){
