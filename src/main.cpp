@@ -48,6 +48,26 @@ void reverse(int speed);
 void stop();
 float pidControl();
 
+void sharp_right(int speed)
+{
+  digitalWrite(AIN1, HIGH);
+  digitalWrite(AIN2, LOW);
+  digitalWrite(BIN1, LOW);
+  digitalWrite(BIN2, HIGH);
+  analogWrite(PWMA, speed);
+  analogWrite(PWMB, speed);
+}
+
+void sharp_left(int speed)
+{
+  digitalWrite(AIN1, LOW);
+  digitalWrite(AIN2, HIGH);
+  digitalWrite(BIN1, HIGH);
+  digitalWrite(BIN2, LOW);
+  analogWrite(PWMA, speed);
+  analogWrite(PWMB, speed);
+}
+
 void setup()
 {
   pinMode(IR1, INPUT);
@@ -66,7 +86,7 @@ void setup()
   digitalWrite(AIN1, HIGH);
   digitalWrite(AIN2, LOW);
   digitalWrite(BIN1, HIGH);
-  digitalWrite(BIN2,LOW);
+  digitalWrite(BIN2, LOW);
   lsp = avg_speed;
   rsp = avg_speed;
 }
@@ -76,13 +96,19 @@ void loop()
   // int curretTime = getCurrentMillis();
   // dt = currentTime - prevTime;
   pos = position();
-  float pidVal = pidControl();
-  Serial.println(pidVal);
-  // Serial.println(dt);
-  // prevTime = currentTime;
-  lsp = avg_speed - pidVal;
-  rsp = avg_speed + pidVal;
-   if (lsp > 225)
+  if (isPos)
+  {
+    digitalWrite(AIN1, HIGH);
+    digitalWrite(AIN2, LOW);
+    digitalWrite(BIN1, HIGH);
+    digitalWrite(BIN2, LOW);
+    float pidVal = pidControl();
+    Serial.println(pidVal);
+    // Serial.println(dt);
+    // prevTime = currentTime;
+    lsp = avg_speed - pidVal;
+    rsp = avg_speed + pidVal;
+    if (lsp > 225)
     {
       lsp = 225;
     }
@@ -98,8 +124,9 @@ void loop()
     {
       rsp = 75;
     }
-  analogWrite(PWMA, lsp);
-  analogWrite(PWMB, rsp);
+    analogWrite(PWMA, lsp);
+    analogWrite(PWMB, rsp);
+  }
   print_ir();
   Serial.println(pos);
   Serial.println(lsp);
@@ -108,54 +135,84 @@ void loop()
   delay(100);
 }
 
-int position(){
+int position()
+{
   isPos = true;
-  if ((digitalRead(IR1) == 0) and (digitalRead(IR2) == 0) and (digitalRead(IR3) == 0) and (digitalRead(IR4) == 0) and (digitalRead(IR5) == 1)){
-      pos = -4;
+  if ((digitalRead(IR1) == 0) and (digitalRead(IR2) == 0) and (digitalRead(IR3) == 0) and (digitalRead(IR4) == 0) and (digitalRead(IR5) == 1))
+  {
+    pos = -4;
   }
-  else if ((digitalRead(IR1) == 0) and (digitalRead(IR2) == 0) and (digitalRead(IR3) == 0) and (digitalRead(IR4) == 1) and (digitalRead(IR5) == 1)){
-      pos = -3;
+  else if ((digitalRead(IR1) == 0) and (digitalRead(IR2) == 0) and (digitalRead(IR3) == 0) and (digitalRead(IR4) == 1) and (digitalRead(IR5) == 1))
+  {
+    pos = -3;
   }
-  else if ((digitalRead(IR1) == 0) and (digitalRead(IR2) == 0) and (digitalRead(IR3) == 0) and (digitalRead(IR4) == 1) and (digitalRead(IR5) == 0)){
-      pos = -2;
+  else if ((digitalRead(IR1) == 0) and (digitalRead(IR2) == 0) and (digitalRead(IR3) == 0) and (digitalRead(IR4) == 1) and (digitalRead(IR5) == 0))
+  {
+    pos = -2;
   }
-  else if ((digitalRead(IR1) == 0) and (digitalRead(IR2) == 0) and (digitalRead(IR3) == 1) and (digitalRead(IR4) == 1) and (digitalRead(IR5) == 0)){
-      pos = -1;
+  else if ((digitalRead(IR1) == 0) and (digitalRead(IR2) == 0) and (digitalRead(IR3) == 1) and (digitalRead(IR4) == 1) and (digitalRead(IR5) == 0))
+  {
+    pos = -1;
   }
-  else if ((digitalRead(IR1) == 0) and (digitalRead(IR2) == 0) and (digitalRead(IR3) == 1) and (digitalRead(IR4) == 0) and (digitalRead(IR5) == 0)){
-      pos = 0;
+  else if ((digitalRead(IR1) == 0) and (digitalRead(IR2) == 0) and (digitalRead(IR3) == 1) and (digitalRead(IR4) == 0) and (digitalRead(IR5) == 0))
+  {
+    pos = 0;
   }
-  else if ((digitalRead(IR1) == 0) and (digitalRead(IR2) == 1) and (digitalRead(IR3) == 1) and (digitalRead(IR4) == 0) and (digitalRead(IR5) == 0)){
-      pos = 1;
+  else if ((digitalRead(IR1) == 0) and (digitalRead(IR2) == 1) and (digitalRead(IR3) == 1) and (digitalRead(IR4) == 0) and (digitalRead(IR5) == 0))
+  {
+    pos = 1;
   }
-  else if ((digitalRead(IR1) == 0) and (digitalRead(IR2) == 1) and (digitalRead(IR3) == 0) and (digitalRead(IR4) == 0) and (digitalRead(IR5) == 0)){
-      pos = 2;
+  else if ((digitalRead(IR1) == 0) and (digitalRead(IR2) == 1) and (digitalRead(IR3) == 0) and (digitalRead(IR4) == 0) and (digitalRead(IR5) == 0))
+  {
+    pos = 2;
   }
-  else if ((digitalRead(IR1) == 1) and (digitalRead(IR2) == 1) and (digitalRead(IR3) == 0) and (digitalRead(IR4) == 0) and (digitalRead(IR5) == 0)){
-      pos = 3;
+  else if ((digitalRead(IR1) == 1) and (digitalRead(IR2) == 1) and (digitalRead(IR3) == 0) and (digitalRead(IR4) == 0) and (digitalRead(IR5) == 0))
+  {
+    pos = 3;
   }
-  else if ((digitalRead(IR1) == 1) and (digitalRead(IR2) == 0) and (digitalRead(IR3) == 0) and (digitalRead(IR4) == 0) and (digitalRead(IR5) == 0)){
-      pos = 4;
+  else if ((digitalRead(IR1) == 1) and (digitalRead(IR2) == 0) and (digitalRead(IR3) == 0) and (digitalRead(IR4) == 0) and (digitalRead(IR5) == 0))
+  {
+    pos = 4;
   }
-  else{
+  else if ((digitalRead(IR1) == 0) and (digitalRead(IR2) == 0) and (digitalRead(IR3) == 0) and (digitalRead(IR4) == 0) and (digitalRead(IR5) == 0))
+  {
     isPos = false;
-    avg_speed = 100;
+    if (pos < 0)
+    {
+      digitalWrite(AIN1, HIGH);
+      digitalWrite(AIN2, LOW);
+      digitalWrite(BIN1, LOW);
+      digitalWrite(BIN2, HIGH);
+      analogWrite(PWMA, 100);
+      analogWrite(PWMB, 100);
+      delay(500);
+    }
+    else if (pos > 0)
+    {
+      digitalWrite(AIN1, LOW);
+      digitalWrite(AIN2, HIGH);
+      digitalWrite(BIN1, HIGH);
+      digitalWrite(BIN2, LOW);
+      analogWrite(PWMA, 100);
+      analogWrite(PWMB, 100);
+      delay(500);
+    }
   }
   return pos;
 }
 
 float pidControl()
 {
-    error = pos*4;
-    pVal = kp*error;
-    integral += error;
-    //integral += error * dt;
-    iVal = ki*integral;
-    derivative = (error - prevError);
-    //derivative = (error - prevError)*dt;
-    dVal = kd*derivative;
-    pidValue = pVal + iVal + dVal;
-    return pidValue;
+  error = pos * 4;
+  pVal = kp * error;
+  integral += error;
+  // integral += error * dt;
+  iVal = ki * integral;
+  derivative = (error - prevError);
+  // derivative = (error - prevError)*dt;
+  dVal = kd * derivative;
+  pidValue = pVal + iVal + dVal;
+  return pidValue;
 }
 
 void forward()
@@ -175,26 +232,6 @@ void reverse(int speed)
   digitalWrite(BIN1, LOW);
   digitalWrite(BIN2, HIGH);
   analogWrite(PWMA, speed);
-  analogWrite(PWMB, speed);
-}
-
-void sharp_right(int speed)
-{
-  digitalWrite(AIN1, HIGH);
-  digitalWrite(AIN2, LOW);
-  digitalWrite(BIN1, HIGH);
-  digitalWrite(BIN2, LOW);
-  analogWrite(PWMA, speed);
-  analogWrite(PWMB, 0);
-}
-
-void sharp_left(int speed)
-{
-  digitalWrite(AIN1, HIGH);
-  digitalWrite(AIN2, LOW);
-  digitalWrite(BIN1, HIGH);
-  digitalWrite(BIN2, LOW);
-  analogWrite(PWMA, 0);
   analogWrite(PWMB, speed);
 }
 
@@ -232,9 +269,9 @@ void signal_1()
   for (int i = 1; i <= 3; ++i)
   {
     digitalWrite(LED_BUILTIN, HIGH); // turn the LED on (HIGH is the voltage level)
-    delay(100);                     // wait for a second
+    delay(100);                      // wait for a second
     digitalWrite(LED_BUILTIN, LOW);  // turn the LED off by making the voltage LOW
-    delay(100);                     // wait for a second
+    delay(100);                      // wait for a second
   }
 }
 
@@ -249,12 +286,12 @@ void pwm_test()
   {
     analogWrite(PWMA, i);
     analogWrite(PWMB, i);
-    delay(x*10);
+    delay(x * 10);
   }
   for (int i = 255; i >= 0; i--)
   {
     analogWrite(PWMA, i);
     analogWrite(PWMB, i);
-    delay(x*10);
+    delay(x * 10);
   }
 }
