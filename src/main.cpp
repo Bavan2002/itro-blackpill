@@ -24,17 +24,23 @@
 
 int P, D, I, previousError, PIDvalue, error;
 int lsp, rsp;
-int lfspeed = 200;
+int Speed = 255;
+int correction_count;
+int avg_speed = 200;
+bool Lost = false;
 
 float Kp = 0;
 float Kd = 0;
 float Ki = 0;
 
 // function prototypes
-void linefollow();
+void line_follow();
 void print_ir();
 void signal_1();
 void pwm_test();
+int position();
+void reverse(int speed);
+void stop();
 
 void setup()
 {
@@ -57,65 +63,136 @@ void loop()
 {
   signal_1();
   print_ir();
-  pwm_test();
+ // pwm_test();
+  if (not(Lost)){
+    line_follow();
+  }
+  else{
+    stop();
 
-  // if (digitalRead(IR1) == 1 && digitalRead(IR5) == 0 )
-  // {
-  //   lsp = 0; rsp = lfspeed;
-  //   Serial.println("to left");
-  //   motor1.drive(0);
-  //   motor2.drive(lfspeed);
-  // }
-
-  // else if (digitalRead(IR5) == 1 && digitalRead(IR1) == 0)
-  // { lsp = lfspeed; rsp = 0;
-  //   Serial.println("to right");
-  //   // motor1.drive(lfspeed);
-  //   // motor2.drive(0);
-  // }
-  // else if (digitalRead(IR3) == 1)
-  // {
-  //   Kp = 0.0006 * (1 - digitalRead(IR3));
-  //   Kd = 10 * Kp;
-  //   //Ki = 0.0001;
-  //   Serial.println("line follow");
-  //   linefollow();
-  //   }
+  }
 }
 
-void linefollow()
-{
-  int error = (digitalRead(IR2) - digitalRead(IR4));
+void line_follow(){
+    digitalWrite(AIN1, HIGH);
+    digitalWrite(AIN2, LOW);
+    digitalWrite(BIN1, HIGH);
+    digitalWrite(BIN2, LOW);
 
-  P = error;
-  I = I + error;
-  D = error - previousError;
+  if (digitalRead(IR1) == 1 && digitalRead(IR5) == 0 )
+  {
+    Serial.println("to left");
+    analogWrite(PWMA, 0);
+    analogWrite(PWMB, Speed);
+    correction_count = 0;
+  }
 
-  PIDvalue = (Kp * P) + (Ki * I) + (Kd * D);
-  previousError = error;
-
-  lsp = lfspeed - PIDvalue;
-  rsp = lfspeed + PIDvalue;
-
-  if (lsp > 255)
-  {
-    lsp = 255;
+  else if (digitalRead(IR5) == 1 && digitalRead(IR1) == 0)
+  { Serial.println("to right");
+    analogWrite(PWMA, Speed);
+    analogWrite(PWMB, 0);
+    correction_count = 0;
   }
-  if (lsp < 0)
-  {
-    lsp = 0;
+  else if (digitalRead(IR3) == 0)
+  { if ((digitalRead(IR1) == 0) and (digitalRead(IR2) == 0) and (digitalRead(IR4) == 0) and (digitalRead(IR5) == 0)){
+    Serial.println("Missed");
+    reverse(100);
+    delay(500);
+    stop();
+    correction_count += 1;
+    if (correction_count >= 5){
+      Lost = true;
+    }else{
+      Lost = false;
+    }
   }
-  if (rsp > 255)
-  {
-    rsp = 255;
+  else{
+    Serial.println("Away");
+    Kp = .06;
+    Kd = 6 * Kp;
+    Ki = 0;
+    error = digitalRead(IR2) - digitalRead(IR4);
+    P = error;
+    I = I + error;
+    D = error - previousError;
+    PIDvalue = (Kp*P) + (Ki*I) + (Kd*D);
+    previousError = error;
+    lsp = avg_speed - PIDvalue;
+    rsp = avg_speed +  PIDvalue;
+    if (lsp > 255)
+    {
+      lsp = 255;
+    }
+    if (lsp < 0)
+    {
+      lsp = 0;
+    }
+    if (rsp > 255)
+    {
+      rsp = 255;
+    }
+    if (rsp < 0)
+    {
+      rsp = 0;
+    }
+    analogWrite(PWMA, lsp);
+    analogWrite(PWMB, rsp);
+    correction_count = 0;
   }
-  if (rsp < 0)
-  {
-    rsp = 0;
+    }
+  else{
+    correction_count = 0;
+     if ((digitalRead(IR1) == 1) and (digitalRead(IR2) == 1) and (digitalRead(IR4) == 1) and (digitalRead(IR5) == 1)){
+    //     analogWrite(PWMA, 0);
+    //   analogWrite(PWMB, 0);
+    //   delay(500);
+    //   analogWrite(PWMA, 150);
+    //  analogWrite(PWMB, 150);
+    //  delay(500);
+    stop();
+    }
+    else{
+      analogWrite(PWMA,avg_speed);
+      analogWrite(PWMB, avg_speed);
   }
-  // motor1.drive(lsp);
-  // motor2.drive(rsp);
 }
+}
+
+
+// void linefollow()
+// {
+//   int error = (digitalRead(IR2) - digitalRead(IR4));
+
+//   P = error;
+//   I = I + error;
+//   D = error - previousError;
+
+//   PIDvalue = (Kp * P) + (Ki * I) + (Kd * D);
+//   previousError = error;
+
+//   lsp = lfspeed - PIDvalue;
+//   rsp = lfspeed + PIDvalue;
+
+//   if (lsp > 255)
+//   {
+//     lsp = 255;
+//   }
+//   if (lsp < 0)
+//   {
+//     lsp = 0;
+//   }
+//   if (rsp > 255)
+//   {
+//     rsp = 255;
+//   }
+//   if (rsp < 0)
+//   {
+//     rsp = 0;
+//   }
+//   // motor1.drive(lsp);
+//   // motor2.drive(rsp);
+// }
+
 
 void forward()
 {
@@ -127,6 +204,45 @@ void forward()
   analogWrite(PWMB, 255);
 }
 
+void reverse(int speed)
+{
+  digitalWrite(AIN1, LOW);
+  digitalWrite(AIN2, HIGH);
+  digitalWrite(BIN1, LOW);
+  digitalWrite(BIN2, HIGH);
+  analogWrite(PWMA, speed);
+  analogWrite(PWMB, speed);
+}
+
+void sharp_right(int speed)
+{
+  digitalWrite(AIN1, HIGH);
+  digitalWrite(AIN2, LOW);
+  digitalWrite(BIN1, HIGH);
+  digitalWrite(BIN2, LOW);
+  analogWrite(PWMA, speed);
+  analogWrite(PWMB, 0);
+}
+
+void sharp_left(int speed)
+{
+  digitalWrite(AIN1, HIGH);
+  digitalWrite(AIN2, LOW);
+  digitalWrite(BIN1, HIGH);
+  digitalWrite(BIN2, LOW);
+  analogWrite(PWMA, 0);
+  analogWrite(PWMB, speed);
+}
+
+void go(int speed)
+{
+  digitalWrite(AIN1, HIGH);
+  digitalWrite(AIN2, LOW);
+  digitalWrite(BIN1, HIGH);
+  digitalWrite(BIN2, LOW);
+  analogWrite(PWMA, speed);
+  analogWrite(PWMB, speed);
+}
 // void right()
 //  {
 //   digitalWrite(mr1,LOW);
