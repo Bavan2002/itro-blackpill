@@ -22,6 +22,11 @@
 #define IR4 PB15
 #define IR5 PA8
 
+// encoder pins
+#define encoderInA PA1
+#define encoderInB PA3
+
+
 int pos = 0;
 int lsp, rsp;
 int Speed = 255;
@@ -37,6 +42,10 @@ float derivative = 0;
 // int currentTime, prevTime, dt;
 bool isPos;
 
+//encoder
+volatile int countA = 0;
+volatile int countB = 0;
+
 float pidVal;
 
 // function prototypes
@@ -48,6 +57,18 @@ int position();
 // void reverse(int speed);
 void stop();
 float pidControl();
+void sharp_right(int spd);
+void sharp_left(int spd);
+void brake_free();
+void brake_fast();
+
+void encIncrementA() {
+  countA ++;
+}
+
+void encIncrementB() {
+  countB ++;
+}
 
 void setup()
 {
@@ -63,10 +84,14 @@ void setup()
   pinMode(BIN2, OUTPUT);
   pinMode(PWMA, OUTPUT);
   pinMode(PWMB, OUTPUT);
+  pinMode (encoderInA, INPUT);
+  attachInterrupt (digitalPinToInterrupt (encoderInA), encIncrementA, RISING);
+  pinMode (encoderInB, INPUT);
+  attachInterrupt (digitalPinToInterrupt (encoderInB), encIncrementB, RISING);
   Serial.begin(9600);
   pidValue = 0;
-  // digitalWrite(AIN1, HIGH);
-  // digitalWrite(AIN2, LOW);
+  digitalWrite(AIN1, HIGH);
+  digitalWrite(AIN2, LOW);
   // digitalWrite(BIN1, HIGH);
   // digitalWrite(BIN2, LOW);
   // lsp = avg_speed;
@@ -76,6 +101,7 @@ void setup()
 
 void loop()
 {
+
   // int curretTime = getCurrentMillis();
   // dt = currentTime - prevTime;
   pos = position();
@@ -113,6 +139,7 @@ void loop()
   Serial.println(pidVal);
   Serial.println(isPos);
   avg_speed = 150;
+  Serial.println(countA);
   delay(20);
 }
 
@@ -177,6 +204,46 @@ int position()
       analogWrite(PWMA, 85);
       analogWrite(PWMB, 85);
       delay(200);
+    }
+  }
+  else if (((digitalRead(IR1) == 0) and (digitalRead(IR2) == 0) and (digitalRead(IR3) == 1) and (digitalRead(IR4) == 1) and (digitalRead(IR5) == 1)) or ((digitalRead(IR1) == 0) and (digitalRead(IR2) == 0) and (digitalRead(IR3) == 1) and (digitalRead(IR4) == 1) and (digitalRead(IR5) == 1)))
+  {
+    isPos = false;
+    stop();
+    delay(200);
+    analogWrite(PWMA, 150);
+    analogWrite(PWMB, 150);
+    delay(225);
+    stop();
+    countA = 0;
+    while(countA<6150){
+        sharp_right(150);
+    }
+    brake_free();
+    delay(200);
+  }
+    else if ((digitalRead(IR1) == 1) and (digitalRead(IR2) == 1) and (digitalRead(IR3) == 1 and (digitalRead(IR4) == 0) and (digitalRead(IR5) ==0 )))
+  {
+    isPos = false;
+    stop();
+    delay(200);
+    analogWrite(PWMA, 150);
+    analogWrite(PWMB, 150);
+    delay(225);
+    stop();
+    if (digitalRead(IR3) == 1){
+      analogWrite(PWMA, 150);
+      analogWrite(PWMB, 150);
+      delay(100);
+      stop();
+    }
+    else if (digitalRead(IR3) == 0){
+    countB = 0;
+    while(countB<6150){
+        sharp_left(150);
+    }
+    brake_free();
+    delay(200);
     }
   }
   return pos;
@@ -286,6 +353,7 @@ void print_ir()
 // }
 
 // void pwm_test()
+
 // {
 //   int8_t x = 3;
 //   digitalWrite(AIN1, HIGH);
@@ -305,3 +373,37 @@ void print_ir()
 //     delay(x * 10);
 //   }
 // }
+
+void sharp_right(int spd) {
+  digitalWrite(AIN1, HIGH);
+  digitalWrite(AIN2, LOW);
+  analogWrite(PWMA, spd);
+  analogWrite(PWMB,0);
+}
+void sharp_left(int spd) {
+  digitalWrite(BIN1, HIGH);
+  digitalWrite(BIN2,LOW);
+  analogWrite(PWMB, spd);
+  analogWrite(PWMA,0);
+}
+
+void brake_fast() {
+  analogWrite(PWMA, 0);
+  analogWrite(PWMB, 0);
+  digitalWrite(AIN1, HIGH);
+  digitalWrite(AIN2, HIGH);
+  digitalWrite(BIN1, HIGH);
+  digitalWrite(BIN2, HIGH);
+  delay(20);
+}
+
+void brake_free() {
+  analogWrite(PWMA, 0);
+  analogWrite(PWMB, 0);
+  digitalWrite(AIN1, LOW);
+  digitalWrite(AIN2, LOW);
+  digitalWrite(BIN1, LOW);
+  digitalWrite(BIN2, LOW);
+  delay(20);
+}
+
