@@ -185,7 +185,7 @@ int position()
       digitalWrite(BIN2, HIGH);
       analogWrite(PWMA, 100);
       analogWrite(PWMB, 100);
-      delay(500);
+      delay(350);
     }
     else if (pos > 0)
     {
@@ -195,7 +195,7 @@ int position()
       digitalWrite(BIN2, LOW);
       analogWrite(PWMA, 100);
       analogWrite(PWMB, 100);
-      delay(500);
+      delay(350);
     }
   }
   return pos;
