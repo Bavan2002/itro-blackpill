@@ -28,9 +28,10 @@ int Speed = 255;
 int correction_count;
 int avg_speed = 150;
 bool Lost = false;
-float kp = 2;
-float ki = 0.7;
-float kd = -0.5;
+
+float kp =  //1.2;
+float ki =  //0.7;
+float kd =  //0.5;
 float pVal, iVal, dVal, pidValue, error;
 float prevError = 0;
 float integral = 0;
@@ -38,35 +39,18 @@ float derivative = 0;
 int currentTime, prevTime, dt;
 bool isPos;
 
+float pidVal;
+
 // function prototypes
-void line_follow();
+// void line_follow();
 void print_ir();
-void signal_1();
-void pwm_test();
+// void signal_1();
+// void pwm_test();
 int position();
-void reverse(int speed);
+// void reverse(int speed);
 void stop();
 float pidControl();
 
-void sharp_right(int speed)
-{
-  digitalWrite(AIN1, HIGH);
-  digitalWrite(AIN2, LOW);
-  digitalWrite(BIN1, LOW);
-  digitalWrite(BIN2, HIGH);
-  analogWrite(PWMA, speed);
-  analogWrite(PWMB, speed);
-}
-
-void sharp_left(int speed)
-{
-  digitalWrite(AIN1, LOW);
-  digitalWrite(AIN2, HIGH);
-  digitalWrite(BIN1, HIGH);
-  digitalWrite(BIN2, LOW);
-  analogWrite(PWMA, speed);
-  analogWrite(PWMB, speed);
-}
 
 void setup()
 {
@@ -83,12 +67,15 @@ void setup()
   pinMode(PWMA, OUTPUT);
   pinMode(PWMB, OUTPUT);
   Serial.begin(9600);
-  digitalWrite(AIN1, HIGH);
-  digitalWrite(AIN2, LOW);
-  digitalWrite(BIN1, HIGH);
-  digitalWrite(BIN2, LOW);
-  lsp = avg_speed;
-  rsp = avg_speed;
+
+  pidValue = 0;
+  // digitalWrite(AIN1, HIGH);
+  // digitalWrite(AIN2, LOW);
+  // digitalWrite(BIN1, HIGH);
+  // digitalWrite(BIN2, LOW);
+  // lsp = avg_speed;
+  // rsp = avg_speed;
+
 }
 
 void loop()
@@ -96,14 +83,15 @@ void loop()
   // int curretTime = getCurrentMillis();
   // dt = currentTime - prevTime;
   pos = position();
+  pidVal = pidControl();
   if (isPos)
   {
+    Serial.println("in isPos");
     digitalWrite(AIN1, HIGH);
     digitalWrite(AIN2, LOW);
     digitalWrite(BIN1, HIGH);
     digitalWrite(BIN2, LOW);
-    float pidVal = pidControl();
-    Serial.println(pidVal);
+
     // Serial.println(dt);
     // prevTime = currentTime;
     lsp = avg_speed - pidVal;
@@ -127,12 +115,11 @@ void loop()
     analogWrite(PWMA, lsp);
     analogWrite(PWMB, rsp);
   }
-  print_ir();
-  Serial.println(pos);
-  Serial.println(lsp);
-  Serial.println(rsp);
+  // print_ir();
+  Serial.println(pidVal);
+  Serial.println(isPos);
   avg_speed = 150;
-  delay(100);
+  delay(20);
 }
 
 int position()
@@ -183,9 +170,9 @@ int position()
       digitalWrite(AIN2, LOW);
       digitalWrite(BIN1, LOW);
       digitalWrite(BIN2, HIGH);
-      analogWrite(PWMA, 100);
-      analogWrite(PWMB, 100);
-      delay(350);
+      analogWrite(PWMA, 85);
+      analogWrite(PWMB, 85);
+      delay(200);
     }
     else if (pos > 0)
     {
@@ -193,9 +180,9 @@ int position()
       digitalWrite(AIN2, HIGH);
       digitalWrite(BIN1, HIGH);
       digitalWrite(BIN2, LOW);
-      analogWrite(PWMA, 100);
-      analogWrite(PWMB, 100);
-      delay(350);
+      analogWrite(PWMA, 85);
+      analogWrite(PWMB, 85);
+      delay(200);
     }
   }
   return pos;
@@ -203,6 +190,7 @@ int position()
 
 float pidControl()
 {
+  if(isPos){
   error = pos * 4;
   pVal = kp * error;
   integral += error;
@@ -212,38 +200,66 @@ float pidControl()
   // derivative = (error - prevError)*dt;
   dVal = kd * derivative;
   pidValue = pVal + iVal + dVal;
+  }
+  else{
+    prevError = 0;
+    integral = 0;
+    derivative = 0;
+    error = 0;
+  }
   return pidValue;
 }
 
-void forward()
-{
-  digitalWrite(AIN1, HIGH);
-  digitalWrite(AIN2, LOW);
-  digitalWrite(BIN1, HIGH);
-  digitalWrite(BIN2, LOW);
-  analogWrite(PWMA, 255);
-  analogWrite(PWMB, 255);
-}
+// void forward()
+// {
+//   digitalWrite(AIN1, HIGH);
+//   digitalWrite(AIN2, LOW);
+//   digitalWrite(BIN1, HIGH);
+//   digitalWrite(BIN2, LOW);
+//   analogWrite(PWMA, 255);
+//   analogWrite(PWMB, 255);
+// }
 
-void reverse(int speed)
-{
-  digitalWrite(AIN1, LOW);
-  digitalWrite(AIN2, HIGH);
-  digitalWrite(BIN1, LOW);
-  digitalWrite(BIN2, HIGH);
-  analogWrite(PWMA, speed);
-  analogWrite(PWMB, speed);
-}
+// void reverse(int speed)
+// {
+//   digitalWrite(AIN1, LOW);
+//   digitalWrite(AIN2, HIGH);
+//   digitalWrite(BIN1, LOW);
+//   digitalWrite(BIN2, HIGH);
+//   analogWrite(PWMA, speed);
+//   analogWrite(PWMB, speed);
+// }
 
-void go(int speed)
-{
-  digitalWrite(AIN1, HIGH);
-  digitalWrite(AIN2, LOW);
-  digitalWrite(BIN1, HIGH);
-  digitalWrite(BIN2, LOW);
-  analogWrite(PWMA, speed);
-  analogWrite(PWMB, speed);
-}
+// void go(int speed)
+
+// void sharp_right(int speed)
+// {
+//   digitalWrite(AIN1, HIGH);
+//   digitalWrite(AIN2, LOW);
+//   digitalWrite(BIN1, LOW);
+//   digitalWrite(BIN2, HIGH);
+//   analogWrite(PWMA, speed);
+//   analogWrite(PWMB, speed);
+// }
+
+// void sharp_left(int speed)
+// {
+//   digitalWrite(AIN1, LOW);
+//   digitalWrite(AIN2, HIGH);
+//   digitalWrite(BIN1, HIGH);
+//   digitalWrite(BIN2, LOW);
+//   analogWrite(PWMA, speed);
+//   analogWrite(PWMB, speed);
+// }
+
+// {
+//   digitalWrite(AIN1, HIGH);
+//   digitalWrite(AIN2, LOW);
+//   digitalWrite(BIN1, HIGH);
+//   digitalWrite(BIN2, LOW);
+//   analogWrite(PWMA, speed);
+//   analogWrite(PWMB, speed);
+// }
 
 void stop()
 {
@@ -264,34 +280,34 @@ void print_ir()
   Serial.println(digitalRead(IR5));
 }
 
-void signal_1()
-{
-  for (int i = 1; i <= 3; ++i)
-  {
-    digitalWrite(LED_BUILTIN, HIGH); // turn the LED on (HIGH is the voltage level)
-    delay(100);                      // wait for a second
-    digitalWrite(LED_BUILTIN, LOW);  // turn the LED off by making the voltage LOW
-    delay(100);                      // wait for a second
-  }
-}
+// void signal_1()
+// {
+//   for (int i = 1; i <= 3; ++i)
+//   {
+//     digitalWrite(LED_BUILTIN, HIGH); // turn the LED on (HIGH is the voltage level)
+//     delay(100);                      // wait for a second
+//     digitalWrite(LED_BUILTIN, LOW);  // turn the LED off by making the voltage LOW
+//     delay(100);                      // wait for a second
+//   }
+// }
 
-void pwm_test()
-{
-  int8_t x = 3;
-  digitalWrite(AIN1, HIGH);
-  digitalWrite(AIN2, LOW);
-  digitalWrite(BIN1, HIGH);
-  digitalWrite(BIN2, LOW);
-  for (int i = 0; i <= 255; i++)
-  {
-    analogWrite(PWMA, i);
-    analogWrite(PWMB, i);
-    delay(x * 10);
-  }
-  for (int i = 255; i >= 0; i--)
-  {
-    analogWrite(PWMA, i);
-    analogWrite(PWMB, i);
-    delay(x * 10);
-  }
-}
+// void pwm_test()
+// {
+//   int8_t x = 3;
+//   digitalWrite(AIN1, HIGH);
+//   digitalWrite(AIN2, LOW);
+//   digitalWrite(BIN1, HIGH);
+//   digitalWrite(BIN2, LOW);
+//   for (int i = 0; i <= 255; i++)
+//   {
+//     analogWrite(PWMA, i);
+//     analogWrite(PWMB, i);
+//     delay(x * 10);
+//   }
+//   for (int i = 255; i >= 0; i--)
+//   {
+//     analogWrite(PWMA, i);
+//     analogWrite(PWMB, i);
+//     delay(x * 10);
+//   }
+// }
