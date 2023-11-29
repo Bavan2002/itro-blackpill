@@ -26,25 +26,27 @@ int pos = 0;
 int lsp, rsp;
 int Speed = 255;
 int correction_count;
-int avg_speed = 200;
+int avg_speed = 150;
 bool Lost = false;
-float kp = 0.5;
-float ki = 0.3;
-float kd = 0.3;
+float kp = 2;
+float ki = 0.7;
+float kd = -0.5;
 float pVal, iVal, dVal, pidValue, error;
 float prevError = 0;
 float integral = 0;
 float derivative = 0;
 int currentTime, prevTime, dt;
+bool isPos;
 
 // function prototypes
 void line_follow();
 void print_ir();
 void signal_1();
 void pwm_test();
-void position();
+int position();
 void reverse(int speed);
 void stop();
+float pidControl();
 
 void setup()
 {
@@ -71,22 +73,43 @@ void setup()
 
 void loop()
 {
-  int curretTime = millis();
-  dt = currentTime - prevTime;
-  position();
+  // int curretTime = getCurrentMillis();
+  // dt = currentTime - prevTime;
+  pos = position();
   float pidVal = pidControl();
-  prevTime = currentTime;
-  lsp = lsp - pidVal;
-  rsp = rsp + pidVal;
-  
+  Serial.println(pidVal);
+  // Serial.println(dt);
+  // prevTime = currentTime;
+  lsp = avg_speed - pidVal;
+  rsp = avg_speed + pidVal;
+   if (lsp > 225)
+    {
+      lsp = 225;
+    }
+    if (lsp < 75)
+    {
+      lsp = 75;
+    }
+    if (rsp > 225)
+    {
+      rsp = 225;
+    }
+    if (rsp < 75)
+    {
+      rsp = 75;
+    }
   analogWrite(PWMA, lsp);
   analogWrite(PWMB, rsp);
-  signal_1();
   print_ir();
-
+  Serial.println(pos);
+  Serial.println(lsp);
+  Serial.println(rsp);
+  avg_speed = 150;
+  delay(100);
 }
 
-void position(){
+int position(){
+  isPos = true;
   if ((digitalRead(IR1) == 0) and (digitalRead(IR2) == 0) and (digitalRead(IR3) == 0) and (digitalRead(IR4) == 0) and (digitalRead(IR5) == 1)){
       pos = -4;
   }
@@ -115,17 +138,21 @@ void position(){
       pos = 4;
   }
   else{
-    stop();
+    isPos = false;
+    avg_speed = 100;
   }
+  return pos;
 }
 
-int pidControl()
+float pidControl()
 {
-    error = pos * 0.06;
+    error = pos*4;
     pVal = kp*error;
-    integral += error * dt;
+    integral += error;
+    //integral += error * dt;
     iVal = ki*integral;
-    derivative = (error - prevError)*dt;
+    derivative = (error - prevError);
+    //derivative = (error - prevError)*dt;
     dVal = kd*derivative;
     pidValue = pVal + iVal + dVal;
     return pidValue;
