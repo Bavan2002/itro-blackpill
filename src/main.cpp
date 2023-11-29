@@ -24,9 +24,9 @@
 
 int P, D, I, previousError, PIDvalue, error;
 int lsp, rsp;
-int Speed = 150;
+int Speed = 120;
 int correction_count;
-int avg_speed = 180;
+int avg_speed = 150;
 bool Lost = false;
 
 float Kp = 0;
@@ -108,14 +108,14 @@ void line_follow(){
   }
   else{
     Serial.println("Away");
-    Kp = .06;
+    Kp = 0.1;
     Kd = 6 * Kp;
     Ki = 0;
     error = digitalRead(IR2) - digitalRead(IR4);
     P = error;
     I = I + error;
     D = error - previousError;
-    PIDvalue = (Kp*P) + (Ki*I) + (Kd*D);
+    PIDvalue = ((Kp*P) + (Ki*I) + (Kd*D))*255;
     previousError = error;
     lsp = avg_speed - PIDvalue;
     rsp = avg_speed +  PIDvalue;
@@ -143,13 +143,12 @@ void line_follow(){
   else{
     correction_count = 0;
      if ((digitalRead(IR1) == 1) and (digitalRead(IR2) == 1) and (digitalRead(IR4) == 1) and (digitalRead(IR5) == 1)){
-    //     analogWrite(PWMA, 0);
-    //   analogWrite(PWMB, 0);
-    //   delay(500);
-    //   analogWrite(PWMA, 150);
-    //  analogWrite(PWMB, 150);
-    //  delay(500);
-    stop();
+      analogWrite(PWMA, 0);
+      analogWrite(PWMB, 0);
+      delay(500);
+      analogWrite(PWMA, 150);
+      analogWrite(PWMB, 150);
+      delay(500);
     }
     else{
       analogWrite(PWMA,avg_speed);
