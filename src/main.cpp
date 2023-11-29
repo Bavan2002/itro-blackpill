@@ -25,18 +25,16 @@
 int pos = 0;
 int lsp, rsp;
 int Speed = 255;
-int correction_count;
 int avg_speed = 150;
-bool Lost = false;
 
-float kp =  //1.2;
-float ki =  //0.7;
-float kd =  //0.5;
+float kp = 8; //1.2;
+float ki = 0; //0.7;
+float kd = 1; //0.5;
 float pVal, iVal, dVal, pidValue, error;
 float prevError = 0;
 float integral = 0;
 float derivative = 0;
-int currentTime, prevTime, dt;
+// int currentTime, prevTime, dt;
 bool isPos;
 
 float pidVal;
@@ -50,7 +48,6 @@ int position();
 // void reverse(int speed);
 void stop();
 float pidControl();
-
 
 void setup()
 {
@@ -67,7 +64,6 @@ void setup()
   pinMode(PWMA, OUTPUT);
   pinMode(PWMB, OUTPUT);
   Serial.begin(9600);
-
   pidValue = 0;
   // digitalWrite(AIN1, HIGH);
   // digitalWrite(AIN2, LOW);
@@ -92,8 +88,6 @@ void loop()
     digitalWrite(BIN1, HIGH);
     digitalWrite(BIN2, LOW);
 
-    // Serial.println(dt);
-    // prevTime = currentTime;
     lsp = avg_speed - pidVal;
     rsp = avg_speed + pidVal;
     if (lsp > 225)
