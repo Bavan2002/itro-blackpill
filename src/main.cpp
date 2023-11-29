@@ -22,23 +22,27 @@
 #define IR4 PB15
 #define IR5 PA8
 
-int P, D, I, previousError, PIDvalue, error;
+int pos = 0;
 int lsp, rsp;
 int Speed = 255;
 int correction_count;
 int avg_speed = 200;
 bool Lost = false;
-
-float Kp = 0;
-float Kd = 0;
-float Ki = 0;
+float kp = 0.5;
+float ki = 0.3;
+float kd = 0.3;
+float pVal, iVal, dVal, pidValue, error;
+float prevError = 0;
+float integral = 0;
+float derivative = 0;
+int currentTime, prevTime, dt;
 
 // function prototypes
 void line_follow();
 void print_ir();
 void signal_1();
 void pwm_test();
-int position();
+void position();
 void reverse(int speed);
 void stop();
 
@@ -57,142 +61,75 @@ void setup()
   pinMode(PWMA, OUTPUT);
   pinMode(PWMB, OUTPUT);
   Serial.begin(9600);
+  digitalWrite(AIN1, HIGH);
+  digitalWrite(AIN2, LOW);
+  digitalWrite(BIN1, HIGH);
+  digitalWrite(BIN2,LOW);
+  lsp = avg_speed;
+  rsp = avg_speed;
 }
 
 void loop()
 {
+  int curretTime = millis();
+  dt = currentTime - prevTime;
+  position();
+  float pidVal = pidControl();
+  prevTime = currentTime;
+  lsp = lsp - pidVal;
+  rsp = rsp + pidVal;
+  
+  analogWrite(PWMA, lsp);
+  analogWrite(PWMB, rsp);
   signal_1();
   print_ir();
- // pwm_test();
-  if (not(Lost)){
-    line_follow();
+
+}
+
+void position(){
+  if ((digitalRead(IR1) == 0) and (digitalRead(IR2) == 0) and (digitalRead(IR3) == 0) and (digitalRead(IR4) == 0) and (digitalRead(IR5) == 1)){
+      pos = -4;
+  }
+  else if ((digitalRead(IR1) == 0) and (digitalRead(IR2) == 0) and (digitalRead(IR3) == 0) and (digitalRead(IR4) == 1) and (digitalRead(IR5) == 1)){
+      pos = -3;
+  }
+  else if ((digitalRead(IR1) == 0) and (digitalRead(IR2) == 0) and (digitalRead(IR3) == 0) and (digitalRead(IR4) == 1) and (digitalRead(IR5) == 0)){
+      pos = -2;
+  }
+  else if ((digitalRead(IR1) == 0) and (digitalRead(IR2) == 0) and (digitalRead(IR3) == 1) and (digitalRead(IR4) == 1) and (digitalRead(IR5) == 0)){
+      pos = -1;
+  }
+  else if ((digitalRead(IR1) == 0) and (digitalRead(IR2) == 0) and (digitalRead(IR3) == 1) and (digitalRead(IR4) == 0) and (digitalRead(IR5) == 0)){
+      pos = 0;
+  }
+  else if ((digitalRead(IR1) == 0) and (digitalRead(IR2) == 1) and (digitalRead(IR3) == 1) and (digitalRead(IR4) == 0) and (digitalRead(IR5) == 0)){
+      pos = 1;
+  }
+  else if ((digitalRead(IR1) == 0) and (digitalRead(IR2) == 1) and (digitalRead(IR3) == 0) and (digitalRead(IR4) == 0) and (digitalRead(IR5) == 0)){
+      pos = 2;
+  }
+  else if ((digitalRead(IR1) == 1) and (digitalRead(IR2) == 1) and (digitalRead(IR3) == 0) and (digitalRead(IR4) == 0) and (digitalRead(IR5) == 0)){
+      pos = 3;
+  }
+  else if ((digitalRead(IR1) == 1) and (digitalRead(IR2) == 0) and (digitalRead(IR3) == 0) and (digitalRead(IR4) == 0) and (digitalRead(IR5) == 0)){
+      pos = 4;
   }
   else{
     stop();
-
   }
 }
 
-void line_follow(){
-    digitalWrite(AIN1, HIGH);
-    digitalWrite(AIN2, LOW);
-    digitalWrite(BIN1, HIGH);
-    digitalWrite(BIN2, LOW);
-
-  if (digitalRead(IR1) == 1 && digitalRead(IR5) == 0 )
-  {
-    Serial.println("to left");
-    analogWrite(PWMA, 0);
-    analogWrite(PWMB, Speed);
-    correction_count = 0;
-  }
-
-  else if (digitalRead(IR5) == 1 && digitalRead(IR1) == 0)
-  { Serial.println("to right");
-    analogWrite(PWMA, Speed);
-    analogWrite(PWMB, 0);
-    correction_count = 0;
-  }
-  else if (digitalRead(IR3) == 0)
-  { if ((digitalRead(IR1) == 0) and (digitalRead(IR2) == 0) and (digitalRead(IR4) == 0) and (digitalRead(IR5) == 0)){
-    Serial.println("Missed");
-    reverse(100);
-    delay(500);
-    stop();
-    correction_count += 1;
-    if (correction_count >= 5){
-      Lost = true;
-    }else{
-      Lost = false;
-    }
-  }
-  else{
-    Serial.println("Away");
-    Kp = .06;
-    Kd = 6 * Kp;
-    Ki = 0;
-    error = digitalRead(IR2) - digitalRead(IR4);
-    P = error;
-    I = I + error;
-    D = error - previousError;
-    PIDvalue = (Kp*P) + (Ki*I) + (Kd*D);
-    previousError = error;
-    lsp = avg_speed - PIDvalue;
-    rsp = avg_speed +  PIDvalue;
-    if (lsp > 255)
-    {
-      lsp = 255;
-    }
-    if (lsp < 0)
-    {
-      lsp = 0;
-    }
-    if (rsp > 255)
-    {
-      rsp = 255;
-    }
-    if (rsp < 0)
-    {
-      rsp = 0;
-    }
-    analogWrite(PWMA, lsp);
-    analogWrite(PWMB, rsp);
-    correction_count = 0;
-  }
-    }
-  else{
-    correction_count = 0;
-     if ((digitalRead(IR1) == 1) and (digitalRead(IR2) == 1) and (digitalRead(IR4) == 1) and (digitalRead(IR5) == 1)){
-    //     analogWrite(PWMA, 0);
-    //   analogWrite(PWMB, 0);
-    //   delay(500);
-    //   analogWrite(PWMA, 150);
-    //  analogWrite(PWMB, 150);
-    //  delay(500);
-    stop();
-    }
-    else{
-      analogWrite(PWMA,avg_speed);
-      analogWrite(PWMB, avg_speed);
-  }
+int pidControl()
+{
+    error = pos * 0.06;
+    pVal = kp*error;
+    integral += error * dt;
+    iVal = ki*integral;
+    derivative = (error - prevError)*dt;
+    dVal = kd*derivative;
+    pidValue = pVal + iVal + dVal;
+    return pidValue;
 }
-}
-
-
-// void linefollow()
-// {
-//   int error = (digitalRead(IR2) - digitalRead(IR4));
-
-//   P = error;
-//   I = I + error;
-//   D = error - previousError;
-
-//   PIDvalue = (Kp * P) + (Ki * I) + (Kd * D);
-//   previousError = error;
-
-//   lsp = lfspeed - PIDvalue;
-//   rsp = lfspeed + PIDvalue;
-
-//   if (lsp > 255)
-//   {
-//     lsp = 255;
-//   }
-//   if (lsp < 0)
-//   {
-//     lsp = 0;
-//   }
-//   if (rsp > 255)
-//   {
-//     rsp = 255;
-//   }
-//   if (rsp < 0)
-//   {
-//     rsp = 0;
-//   }
-//   // motor1.drive(lsp);
-//   // motor2.drive(rsp);
-// }
-
 
 void forward()
 {
@@ -243,27 +180,6 @@ void go(int speed)
   analogWrite(PWMA, speed);
   analogWrite(PWMB, speed);
 }
-// void right()
-//  {
-//   digitalWrite(mr1,LOW);
-//   digitalWrite(mr2,HIGH);
-//    digitalWrite(ml1,HIGH);
-//   digitalWrite(ml2,LOW);
-//   analogWrite (enr,tspeed);
-//    analogWrite (enl,tspeed);
-//   delay(tdelay);
-//  }
-
-// void left()
-//  {
-//    digitalWrite(mr1,HIGH);
-//   digitalWrite(mr2,LOW);
-//   digitalWrite(ml1,LOW);
-//    digitalWrite(ml2,HIGH);
-//   analogWrite (enr,tspeed);
-//   analogWrite (enl,tspeed);
-//    delay(tdelay);
-// }
 
 void stop()
 {
