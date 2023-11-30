@@ -229,31 +229,33 @@ int position()
     delay(200);
     analogWrite(PWMA, 150);
     analogWrite(PWMB, 150);
-    delay(275);
+    delay(225);
     stop();
+    if((digitalRead(IR1) == 0) and (digitalRead(IR2) == 0) and (digitalRead(IR3) == 0) and (digitalRead(IR4) == 0) and (digitalRead(IR5) ==0 )){
     countA = 0;
     while(countA<5900){
         sharp_right(125);
     }
     brake_free();
     delay(200);
+    }
   }
-    else if ((digitalRead(IR1) == 1) and (digitalRead(IR2) == 1) and (digitalRead(IR3) == 1 and (digitalRead(IR4) == 0) and (digitalRead(IR5) ==0 )))
+    else if ((digitalRead(IR1) == 1) and (digitalRead(IR2) == 1) and (digitalRead(IR3) == 1) and (digitalRead(IR4) == 0) and (digitalRead(IR5) ==0 ))
   {
     isPos = false;
     stop();
     delay(200);
     analogWrite(PWMA, 150);
     analogWrite(PWMB, 150);
-    delay(275);
+    delay(225);
     stop();
-    if (digitalRead(IR3) == 1){
+    if ((digitalRead(IR1) == 0) and (digitalRead(IR2) == 0) and (digitalRead(IR3) == 1) and (digitalRead(IR4) == 0) and (digitalRead(IR5) ==0 )){
       analogWrite(PWMA, 150);
       analogWrite(PWMB, 150);
       delay(100);
       stop();
     }
-    else if (digitalRead(IR3) == 0){
+    else if ((digitalRead(IR1) == 0) and (digitalRead(IR2) == 0) and (digitalRead(IR3) == 0) and (digitalRead(IR4) == 0) and (digitalRead(IR5) ==0 )){
     countB = 0;
     while(countB<5000){
         sharp_left(125);
