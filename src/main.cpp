@@ -30,7 +30,7 @@
 int pos = 0;
 int lsp, rsp;
 int Speed = 255;
-int avg_speed = 150;
+int avg_speed = 125;
 
 float kp = 8; //1.2;
 float ki = 0; //0.7;
@@ -138,7 +138,7 @@ void loop()
   // print_ir();
   Serial.println(pidVal);
   Serial.println(isPos);
-  avg_speed = 150;
+  avg_speed = 125;
   Serial.println(countA);
   delay(20);
 }
@@ -185,7 +185,7 @@ int position()
   else if ((digitalRead(IR1) == 0) and (digitalRead(IR2) == 0) and (digitalRead(IR3) == 0) and (digitalRead(IR4) == 0) and (digitalRead(IR5) == 0))
   {
     isPos = false;
-    if (pos < 0)
+    if (pos > 0)
     {
       digitalWrite(AIN1, HIGH);
       digitalWrite(AIN2, LOW);
@@ -195,7 +195,7 @@ int position()
       analogWrite(PWMB, 85);
       delay(200);
     }
-    else if (pos > 0)
+    else if (pos < 0)
     {
       digitalWrite(AIN1, LOW);
       digitalWrite(AIN2, HIGH);
@@ -205,19 +205,35 @@ int position()
       analogWrite(PWMB, 85);
       delay(200);
     }
+    else if(pos ==0){
+      stop();
+      analogWrite(PWMA, 150);
+      analogWrite(PWMB, 150);
+      delay(400);
+      countA = 0;
+      while (countA < 6500){
+      digitalWrite(AIN1, LOW);
+      digitalWrite(AIN2, HIGH);
+      digitalWrite(BIN1, HIGH);
+      digitalWrite(BIN2, LOW);
+      analogWrite(PWMA, 85);
+      analogWrite(PWMB, 85);
+      }
+      delay(200);
+    }
   }
-  else if (((digitalRead(IR1) == 0) and (digitalRead(IR2) == 0) and (digitalRead(IR3) == 1) and (digitalRead(IR4) == 1) and (digitalRead(IR5) == 1)) or ((digitalRead(IR1) == 0) and (digitalRead(IR2) == 0) and (digitalRead(IR3) == 1) and (digitalRead(IR4) == 1) and (digitalRead(IR5) == 1)))
+  else if (((digitalRead(IR1) == 0) and (digitalRead(IR2) == 0) and (digitalRead(IR3) == 1) and (digitalRead(IR4) == 1) and (digitalRead(IR5) == 1)) or ((digitalRead(IR1) == 1) and (digitalRead(IR2) == 1) and (digitalRead(IR3) == 1) and (digitalRead(IR4) == 1) and (digitalRead(IR5) == 1)))
   {
     isPos = false;
     stop();
     delay(200);
     analogWrite(PWMA, 150);
     analogWrite(PWMB, 150);
-    delay(225);
+    delay(275);
     stop();
     countA = 0;
-    while(countA<6150){
-        sharp_right(150);
+    while(countA<5900){
+        sharp_right(125);
     }
     brake_free();
     delay(200);
@@ -229,7 +245,7 @@ int position()
     delay(200);
     analogWrite(PWMA, 150);
     analogWrite(PWMB, 150);
-    delay(225);
+    delay(275);
     stop();
     if (digitalRead(IR3) == 1){
       analogWrite(PWMA, 150);
@@ -239,8 +255,8 @@ int position()
     }
     else if (digitalRead(IR3) == 0){
     countB = 0;
-    while(countB<6150){
-        sharp_left(150);
+    while(countB<5000){
+        sharp_left(125);
     }
     brake_free();
     delay(200);
